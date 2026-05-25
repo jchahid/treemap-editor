@@ -46,9 +46,9 @@ export class TreeService {
       children: [],
       expanded: true,
       createdAt: new Date().toISOString(),
-      showPrice: true,
-      showDays: true,
-      showDescription: true
+      showPrice: false,
+      showDays: false,
+      showDescription: false
     };
 
     const newDoc = { ...this.document() };
@@ -205,6 +205,30 @@ export class TreeService {
     }
   }
 
+  resetDocument() {
+    if (confirm('Voulez-vous vraiment réinitialiser toute la map ? Cette action est irréversible.')) {
+      const defaultDoc: TreeDocument = {
+        id: crypto.randomUUID(),
+        name: 'Mon TreeMap',
+        updatedAt: new Date().toISOString(),
+        root: {
+          id: crypto.randomUUID(),
+          title: 'Racine',
+          contentType: 'text',
+          content: 'Bienvenue dans votre éditeur de TreeMap.',
+          children: [],
+          expanded: true,
+          createdAt: new Date().toISOString(),
+          showPrice: false,
+          showDays: false,
+          showDescription: false
+        }
+      };
+      this.document.set(defaultDoc);
+      this.selectedNodeId.set(null);
+    }
+  }
+
   // Helpers
   private findNodeById(root: TreeNode, id: string): TreeNode | null {
     if (root.id === id) return root;
@@ -250,9 +274,9 @@ export class TreeService {
         children: [],
         expanded: true,
         createdAt: new Date().toISOString(),
-        showPrice: true,
-        showDays: true,
-        showDescription: true
+        showPrice: false,
+        showDays: false,
+        showDescription: false
       }
     };
   }

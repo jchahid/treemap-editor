@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["app.component.ts"],
+  "sourcesContent": ["\n    .app-layout {\n      display: flex;\n      flex-direction: column;\n      height: 100vh;\n      width: 100vw;\n    }\n\n    .main-content {\n      flex: 1;\n      display: flex;\n      overflow: hidden;\n      position: relative;\n    }\n  "],
+  "mappings": ";AACI,CAAA;AACE,WAAA;AACA,kBAAA;AACA,UAAA;AACA,SAAA;;AAGF,CAAA;AACE,QAAA;AACA,WAAA;AACA,YAAA;AACA,YAAA;;",
+  "names": []
+}

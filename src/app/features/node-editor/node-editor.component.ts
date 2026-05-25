@@ -8,8 +8,11 @@ import { TreeNode, TaskItem } from '../../core/models/tree-node.model';
   selector: 'app-node-editor',
   standalone: true,
   imports: [CommonModule, FormsModule],
+  host: {
+    '[class.open]': '!!treeService.selectedNodeId()'
+  },
   template: `
-    <aside class="editor-sidebar" [class.open]="treeService.selectedNodeId()">
+    <aside class="editor-sidebar">
       @if (treeService.selectedNode(); as node) {
         <div class="editor-header">
           <h2>Éditer le nœud</h2>
@@ -169,7 +172,30 @@ import { TreeNode, TaskItem } from '../../core/models/tree-node.model';
     }
   `,
   styles: [`
-    .editor-sidebar { position: fixed; top: 64px; right: -400px; width: 400px; height: calc(100vh - 64px); background-color: var(--bg-secondary); border-left: 1px solid var(--border); transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1); display: flex; flex-direction: column; z-index: 90; box-shadow: -4px 0 20px var(--shadow); &.open { right: 0; } }
+    :host {
+      display: flex;
+      flex-direction: column;
+      width: 0;
+      height: 100%;
+      transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      overflow: hidden;
+      border-left: 0 solid var(--border);
+      background-color: var(--bg-secondary);
+      z-index: 90;
+      &.open {
+        width: 400px;
+        border-left: 1px solid var(--border);
+        box-shadow: -4px 0 20px var(--shadow);
+      }
+    }
+    .editor-sidebar {
+      width: 400px;
+      height: 100%;
+      background-color: var(--bg-secondary);
+      display: flex;
+      flex-direction: column;
+      flex-shrink: 0;
+    }
     .editor-header { padding: 1rem 1.5rem; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; h2 { font-size: 1rem; font-weight: 700; } }
     .editor-body { flex: 1; overflow-y: auto; padding: 1.5rem; display: flex; flex-direction: column; gap: 1.5rem; }
     .form-top-row { display: flex; flex-direction: column; gap: 1rem; }

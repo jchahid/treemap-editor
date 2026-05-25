@@ -26,10 +26,35 @@ import { TreeNode } from '../../core/models/tree-node.model';
           </div>
 
           <div class="print-content">
-            @if (node.contentType === 'image' && node.content) {
-              <img [src]="node.content" alt="Image">
-            } @else {
-              <div [innerHTML]="node.content"></div>
+            @switch (node.contentType) {
+              @case ('text') {
+                <div [innerHTML]="node.content"></div>
+              }
+              @case ('image') {
+                @if (node.content) {
+                  <img [src]="node.content" alt="Image">
+                }
+              }
+              @case ('tasks') {
+                @if (node.tasks?.length) {
+                  <ul class="print-tasks">
+                    @for (task of node.tasks; track task.id) {
+                      <li class="print-task-item" [class.completed]="task.completed">
+                        <span class="print-checkbox" [class.checked]="task.completed"></span>
+                        <span>{{ task.label }}</span>
+                      </li>
+                    }
+                  </ul>
+                }
+              }
+              @case ('code') {
+                @if (node.content) {
+                  <div class="print-code">
+                    <div class="print-code-lang">{{ node.codeLanguage || 'text' }}</div>
+                    <pre><code>{{ node.content }}</code></pre>
+                  </div>
+                }
+              }
             }
           </div>
 
@@ -84,7 +109,37 @@ import { TreeNode } from '../../core/models/tree-node.model';
           margin: 1rem 0;
         }
       }
+      .print-tasks {
+      list-style: none;
+      padding: 0;
+      margin: 0;
     }
+    .print-task-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 4pt;
+    }
+    .print-checkbox {
+      width: 12px;
+      height: 12px;
+      border: 1px solid #000;
+      margin-right: 6pt;
+      display: inline-block;
+    }
+    .print-checkbox.checked {
+      background: #000;
+    }
+    .print-code {
+      background: #f5f5f5;
+      padding: 8pt;
+      border-radius: 4pt;
+      font-family: monospace;
+    }
+    .print-code-lang {
+      font-weight: bold;
+      margin-bottom: 4pt;
+    }
+  }
   `]
 })
 export class PrintViewComponent {
