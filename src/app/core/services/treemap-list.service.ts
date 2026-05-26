@@ -1,6 +1,6 @@
 import { Injectable, signal, computed } from '@angular/core';
 import { TreeDocument } from '../models/tree-node.model';
-import { TreeMapDocument, TreeMapMeta, TreeMapStatus } from '../models/treemap.model';
+import { TreeMapDocument, TreeMapMeta } from '../models/treemap.model';
 
 @Injectable({ providedIn: 'root' })
 export class TreeMapListService {
@@ -76,43 +76,6 @@ export class TreeMapListService {
       const raw = localStorage.getItem(this.STORAGE_KEY);
       if (raw) return JSON.parse(raw);
     } catch { /* ignore */ }
-    return this.seed();
-  }
-
-  private seed(): TreeMapDocument[] {
-    return [
-      this.buildSample('Projet Site Web', 'terminé', Date.now() - 7 * 86400000),
-      this.buildSample('Architecture Microservices', 'en-cours', Date.now() - 2 * 86400000),
-      this.buildSample('Roadmap Q3 2026', 'brouillon', Date.now()),
-    ];
-  }
-
-  private buildSample(title: string, status: TreeMapStatus, ts: number): TreeMapDocument {
-    const createdAt = new Date(ts).toISOString();
-    const now = new Date().toISOString();
-    return {
-      id: crypto.randomUUID(),
-      title,
-      status,
-      createdAt,
-      updatedAt: now,
-      data: {
-        id: crypto.randomUUID(),
-        name: title,
-        updatedAt: now,
-        root: {
-          id: crypto.randomUUID(),
-          title,
-          contentType: 'text',
-          content: '',
-          children: [],
-          expanded: true,
-          createdAt,
-          showPrice: false,
-          showDays: false,
-          showDescription: false,
-        },
-      },
-    };
+    return [];
   }
 }
