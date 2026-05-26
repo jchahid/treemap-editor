@@ -4,11 +4,11 @@
   "main": "main.js",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build --base-href ./",
-    "watch": "ng build --watch --configuration development",
-    "electron": "ng build --base-href ./ && electron .",
-    "electron:build": "ng build --base-href ./ && electron-builder",
+    "start": "node scripts/set-env.js && ng serve",
+    "build": "node scripts/set-env.js && ng build --base-href ./",
+    "watch": "node scripts/set-env.js && ng build --watch --configuration development",
+    "electron": "node scripts/set-env.js && ng build --base-href ./ && electron .",
+    "electron:build": "node scripts/set-env.js && ng build --base-href ./ && electron-builder",
     "build:web": "ng build --configuration production"
   },
   "private": true,

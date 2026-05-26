@@ -1,5 +1,5 @@
 [build]
-  command   = "npm run build:web"
+  command   = "node scripts/set-env.js && npm run build:web"
   publish   = "dist/treemap-editor/browser"
 
 [[redirects]]

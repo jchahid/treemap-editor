@@ -103,7 +103,12 @@ import { TreemapCardComponent } from './treemap-card/treemap-card.component';
         </div>
 
         <!-- Grille ou état vide -->
-        @if (filtered().length === 0) {
+        @if (list.loading()) {
+          <div class="loading-state">
+            <span class="spinner"></span>
+            <p>Chargement de vos TreeMaps…</p>
+          </div>
+        } @else if (filtered().length === 0) {
           <div class="empty-state">
             <div class="empty-icon">
               <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -270,6 +275,19 @@ import { TreemapCardComponent } from './treemap-card/treemap-card.component';
       display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem;
       animation: fadeIn .3s ease-out;
     }
+
+    /* ── Chargement ── */
+    .loading-state {
+      text-align: center; padding: 4rem 2rem;
+      display: flex; flex-direction: column; align-items: center; gap: 1rem; color: #9CA3AF;
+      p { font-size: .9375rem; }
+    }
+    .spinner {
+      display: inline-block; width: 32px; height: 32px;
+      border: 3px solid #E5E7EB; border-top-color: #6366F1;
+      border-radius: 50%; animation: spin .7s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ── État vide ── */
     .empty-state { text-align: center; padding: 4rem 2rem; }
