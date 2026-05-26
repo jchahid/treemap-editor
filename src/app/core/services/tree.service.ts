@@ -36,6 +36,11 @@ export class TreeService {
     });
   }
 
+  loadDocument(doc: TreeDocument): void {
+    this.document.set(doc);
+    this.selectedNodeId.set(null);
+  }
+
   // CRUD Operations
   addNode(parentId: string) {
     const newNode: TreeNode = {
