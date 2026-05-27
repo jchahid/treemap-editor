@@ -102,6 +102,22 @@ import { TreemapCardComponent } from './treemap-card/treemap-card.component';
                  placeholder="Rechercher un TreeMap…" />
         </div>
 
+        <!-- Erreur Firestore -->
+        @if (list.syncError()) {
+          <div class="sync-error">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            <span>
+              Synchronisation Firestore impossible : <strong>{{ list.syncError() }}</strong>.
+              Tes maps ne sont sauvegardées que localement.
+              Active Firestore dans ta
+              <a href="https://console.firebase.google.com" target="_blank" rel="noopener">Firebase Console</a>
+              et vérifie les Security Rules.
+            </span>
+          </div>
+        }
+
         <!-- Grille ou état vide -->
         @if (list.loading()) {
           <div class="loading-state">
@@ -274,6 +290,16 @@ import { TreemapCardComponent } from './treemap-card/treemap-card.component';
     .treemap-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.25rem;
       animation: fadeIn .3s ease-out;
+    }
+
+    /* ── Erreur sync ── */
+    .sync-error {
+      display: flex; align-items: flex-start; gap: .625rem;
+      padding: .875rem 1rem; margin-bottom: 1.25rem;
+      background: #FFF7ED; border: 1.5px solid #FED7AA; border-radius: .75rem;
+      color: #C2410C; font-size: .875rem; line-height: 1.5;
+      svg { flex-shrink: 0; margin-top: 2px; }
+      a { color: #C2410C; font-weight: 600; }
     }
 
     /* ── Chargement ── */

@@ -25,10 +25,12 @@ export class TreeMapListService {
 
   private _treemaps = signal<TreeMapDocument[]>([]);
   private _loading  = signal(true);
+  private _error    = signal<string | null>(null);
   private unsub: (() => void) | null = null;
 
   readonly treemaps   = this._treemaps.asReadonly();
   readonly loading    = this._loading.asReadonly();
+  readonly syncError  = this._error.asReadonly();
   readonly total      = computed(() => this._treemaps().length);
   readonly inProgress = computed(() => this._treemaps().filter(t => t.status === 'en-cours').length);
   readonly completed  = computed(() => this._treemaps().filter(t => t.status === 'terminé').length);
@@ -47,6 +49,7 @@ export class TreeMapListService {
 
       if (user.provider === 'google') {
         this._loading.set(true);
+        this._error.set(null);
         this.subscribeFirestore(user.id);
       } else {
         this._treemaps.set(this.loadLocal());
@@ -144,6 +147,7 @@ export class TreeMapListService {
       },
       err => {
         console.error('Firestore snapshot error:', err);
+        this._error.set(err?.code ?? err?.message ?? 'Firestore inaccessible');
         this._loading.set(false);
       },
     );
@@ -154,8 +158,9 @@ export class TreeMapListService {
     if (uid) {
       try {
         await setDoc(firestoreDoc(db, 'users', uid, 'treemaps', treemap.id), treemap);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Firestore write error:', err);
+        this._error.set(err?.code ?? err?.message ?? 'Erreur écriture Firestore');
       }
     } else {
       this.persistLocal(this._treemaps());
