@@ -1,4 +1,5 @@
-import { Injectable, signal, computed, inject, effect } from '@angular/core';
+import { Injectable, signal, computed, inject } from '@angular/core';
+import { toObservable } from '@angular/core/rxjs-interop';
 import {
   getFirestore,
   collection,
@@ -36,26 +37,25 @@ export class TreeMapListService {
   readonly completed  = computed(() => this._treemaps().filter(t => t.status === 'terminé').length);
 
   constructor() {
-    effect(() => {
-      const user = this.auth.user();
+    toObservable(this.auth.user).subscribe(user => {
       this.unsub?.();
       this.unsub = null;
+      this._treemaps.set([]);
+      this._error.set(null);
 
       if (!user) {
-        this._treemaps.set([]);
         this._loading.set(false);
         return;
       }
 
       if (user.provider === 'google') {
         this._loading.set(true);
-        this._error.set(null);
         this.subscribeFirestore(user.id);
       } else {
         this._treemaps.set(this.loadLocal());
         this._loading.set(false);
       }
-    }, { allowSignalWrites: true });
+    });
   }
 
   // ── CRUD ─────────────────────────────────────────────────────────────────
