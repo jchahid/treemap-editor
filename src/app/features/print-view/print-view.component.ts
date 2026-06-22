@@ -86,6 +86,9 @@ import { TreeNode } from '../../core/models/tree-node.model';
 
       .print-node {
         margin-bottom: 1.5rem;
+      }
+
+      .print-content, .print-meta {
         page-break-inside: avoid;
       }
 

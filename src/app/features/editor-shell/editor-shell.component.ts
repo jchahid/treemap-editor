@@ -53,6 +53,18 @@ import { TreeMapStatus } from '../../core/models/treemap.model';
       height: 100vh; overflow: hidden;
     }
 
+    @media print {
+      .editor-shell {
+        height: auto;
+        overflow: visible;
+        display: block;
+      }
+
+      .back-bar, app-toolbar, .editor-main {
+        display: none !important;
+      }
+    }
+
     .back-bar {
       display: flex; align-items: center; gap: 1rem;
       height: 40px; padding: 0 1rem; flex-shrink: 0;
