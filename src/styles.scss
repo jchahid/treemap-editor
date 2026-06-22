@@ -123,14 +123,19 @@ input, textarea, select {
 }
 
 @media print {
-  .app-layout > app-toolbar,
-  .app-layout > main {
-    display: none !important;
+  html, body, app-root, app-editor-shell {
+    height: auto !important;
+    overflow: visible !important;
+    display: block !important;
   }
-  
+
   body {
     background-color: white !important;
-    overflow: visible !important;
+  }
+
+  .editor-shell {
     height: auto !important;
+    overflow: visible !important;
+    display: block !important;
   }
 }
