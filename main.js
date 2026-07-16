@@ -15,8 +15,8 @@ function createWindow() {
     width: 1200,
     height: 800,
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      nodeIntegration: false,
+      contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
     },
     icon: path.join(__dirname, 'dist/treemap-editor/favicon.ico'),
@@ -57,7 +57,7 @@ function generateCodeChallenge(verifier) {
  * Retourne { port, waitForCode } où waitForCode est une Promise<string>
  * résolue dès réception du ?code= dans la requête de callback.
  */
-function startCallbackServer() {
+function startCallbackServer(expectedState) {
   return new Promise((resolve) => {
     const server = http.createServer();
 
@@ -67,6 +67,11 @@ function startCallbackServer() {
           const parsedUrl = new URL(req.url, `http://127.0.0.1`);
           const code  = parsedUrl.searchParams.get('code');
           const error = parsedUrl.searchParams.get('error');
+          const state = parsedUrl.searchParams.get('state');
+
+          if (state !== expectedState) {
+            throw new Error('invalid_state');
+          }
 
           const html = code
             ? `<!DOCTYPE html><html lang="fr"><body style="font-family:sans-serif;text-align:center;padding:3rem;background:#f0fdf4">
@@ -111,8 +116,9 @@ function startCallbackServer() {
 ipcMain.handle('google-oauth', async (event, { clientId }) => {
   const codeVerifier  = generateCodeVerifier();
   const codeChallenge = generateCodeChallenge(codeVerifier);
+  const state         = crypto.randomBytes(16).toString('hex');
 
-  const { port, waitForCode, server } = await startCallbackServer();
+  const { port, waitForCode, server } = await startCallbackServer(state);
   const redirectUri = `http://127.0.0.1:${port}`;
 
   // Construction de l'URL d'autorisation Google
@@ -123,6 +129,7 @@ ipcMain.handle('google-oauth', async (event, { clientId }) => {
   authUrl.searchParams.set('scope',                 'openid email profile');
   authUrl.searchParams.set('code_challenge',        codeChallenge);
   authUrl.searchParams.set('code_challenge_method', 'S256');
+  authUrl.searchParams.set('state',                 state);
   authUrl.searchParams.set('prompt',                'select_account');
   authUrl.searchParams.set('access_type',           'online');
 

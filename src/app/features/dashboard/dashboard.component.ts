@@ -5,6 +5,45 @@ import { AuthService } from '../../core/services/auth.service';
 import { TreeMapListService } from '../../core/services/treemap-list.service';
 import { TreemapCardComponent } from './treemap-card/treemap-card.component';
 
+function sanitizeHtml(html: string): string {
+  if (!html) return '';
+  try {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const allowedTags = ['B', 'I', 'U', 'STRONG', 'EM', 'UL', 'OL', 'LI', 'P', 'BR', 'DIV', 'SPAN'];
+    const allElements = doc.body.querySelectorAll('*');
+    for (let i = 0; i < allElements.length; i++) {
+      const el = allElements[i];
+      if (!allowedTags.includes(el.tagName)) {
+        el.remove();
+        continue;
+      }
+      const attrs = el.attributes;
+      for (let j = attrs.length - 1; j >= 0; j--) {
+        const attrName = attrs[j].name.toLowerCase();
+        if (attrName.startsWith('on') || attrName === 'href' && attrs[j].value.trim().toLowerCase().startsWith('javascript:')) {
+          el.removeAttribute(attrs[j].name);
+        }
+      }
+    }
+    return doc.body.innerHTML;
+  } catch (e) {
+    console.error('HTML Sanitization error:', e);
+    return '';
+  }
+}
+
+function sanitizeTreeNode(node: any): void {
+  if (!node) return;
+  if (typeof node.content === 'string') {
+    node.content = sanitizeHtml(node.content);
+  }
+  if (Array.isArray(node.children)) {
+    for (const child of node.children) {
+      sanitizeTreeNode(child);
+    }
+  }
+}
+
 @Component({
   selector: 'app-dashboard',
   standalone: true,
@@ -478,6 +517,7 @@ export class DashboardComponent {
             if (Array.isArray(parsed)) {
               for (const item of parsed) {
                 if (this.isValidTreeMapDoc(item)) {
+                  sanitizeTreeNode(item.data.root);
                   this.list.importTreeMap(item);
                   importedCount++;
                 } else {
@@ -485,10 +525,12 @@ export class DashboardComponent {
                 }
               }
             } else if (this.isValidTreeMapDoc(parsed)) {
+              sanitizeTreeNode(parsed.data.root);
               this.list.importTreeMap(parsed);
               importedCount++;
             } else if (parsed.root && parsed.name) {
               const now = new Date().toISOString();
+              sanitizeTreeNode(parsed.root);
               const treemap = {
                 id: crypto.randomUUID(),
                 title: parsed.name,

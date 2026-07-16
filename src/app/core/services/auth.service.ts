@@ -99,11 +99,8 @@ export class AuthService {
   //  IPC → fenêtre OAuth dédiée → échange PKCE → signInWithCredential
   // ══════════════════════════════════════════════════════════════════════════
   private async loginElectron(): Promise<UserCredential> {
-    const ipc = this.getIpcRenderer()!;
-
-    const result = await ipc.invoke('google-oauth', {
-      clientId: environment.googleClientId,
-    });
+    const api = (window as any).electronAPI;
+    const result = await api.googleOauth(environment.googleClientId);
 
     if (result.error) throw new Error(result.error);
 
@@ -117,13 +114,9 @@ export class AuthService {
 
   // ── Helpers ──────────────────────────────────────────────────────────────
 
-  /** true si window.ipcRenderer existe (posé par preload.js uniquement dans Electron) */
+  /** true si window.electronAPI existe (posé par preload.js uniquement dans Electron) */
   private isElectron(): boolean {
-    return !!(window as any).ipcRenderer;
-  }
-
-  private getIpcRenderer(): any | null {
-    return (window as any).ipcRenderer ?? null;
+    return !!(window as any).electronAPI;
   }
 
   private mapFirebaseUser(user: any): AuthUser {

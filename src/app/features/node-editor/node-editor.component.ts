@@ -4,6 +4,33 @@ import { FormsModule } from '@angular/forms';
 import { TreeService } from '../../core/services/tree.service';
 import { TreeNode, TaskItem } from '../../core/models/tree-node.model';
 
+function sanitizeHtml(html: string): string {
+  if (!html) return '';
+  try {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    const allowedTags = ['B', 'I', 'U', 'STRONG', 'EM', 'UL', 'OL', 'LI', 'P', 'BR', 'DIV', 'SPAN'];
+    const allElements = doc.body.querySelectorAll('*');
+    for (let i = 0; i < allElements.length; i++) {
+      const el = allElements[i];
+      if (!allowedTags.includes(el.tagName)) {
+        el.remove();
+        continue;
+      }
+      const attrs = el.attributes;
+      for (let j = attrs.length - 1; j >= 0; j--) {
+        const attrName = attrs[j].name.toLowerCase();
+        if (attrName.startsWith('on') || attrName === 'href' && attrs[j].value.trim().toLowerCase().startsWith('javascript:')) {
+          el.removeAttribute(attrs[j].name);
+        }
+      }
+    }
+    return doc.body.innerHTML;
+  } catch (e) {
+    console.error('HTML Sanitization error:', e);
+    return '';
+  }
+}
+
 @Component({
   selector: 'app-node-editor',
   standalone: true,
@@ -271,7 +298,7 @@ export class NodeEditorComponent {
 
   private updateEditorContent() {
     if (this.modalEditorElement && this.tempNode.contentType === 'text') {
-      this.modalEditorElement.nativeElement.innerHTML = this.tempNode.content || '';
+      this.modalEditorElement.nativeElement.innerHTML = sanitizeHtml(this.tempNode.content || '');
     }
   }
 
@@ -286,7 +313,7 @@ export class NodeEditorComponent {
   }
 
   onEditorInput(event: any) {
-    this.tempNode.content = event.target.innerHTML;
+    this.tempNode.content = sanitizeHtml(event.target.innerHTML);
   }
 
   // Task Methods
