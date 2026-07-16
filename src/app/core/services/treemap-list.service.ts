@@ -60,6 +60,18 @@ export class TreeMapListService {
 
   // ── CRUD ─────────────────────────────────────────────────────────────────
 
+  importTreeMap(treemap: TreeMapDocument): void {
+    const exists = this._treemaps().some(t => t.id === treemap.id);
+    const imported: TreeMapDocument = {
+      ...treemap,
+      id: exists ? crypto.randomUUID() : treemap.id,
+      title: exists ? `${treemap.title} (copie)` : treemap.title,
+      updatedAt: new Date().toISOString()
+    };
+    this._treemaps.update(list => [imported, ...list]);
+    this.saveDoc(imported);
+  }
+
   create(title: string): TreeMapDocument {
     const now = new Date().toISOString();
     const treemap: TreeMapDocument = {

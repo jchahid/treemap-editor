@@ -52,11 +52,31 @@ import { TreemapCardComponent } from './treemap-card/treemap-card.component';
             <h1 class="page-title">Mes TreeMaps</h1>
             <p class="page-sub">Gérez et visualisez vos projets de cartographie</p>
           </div>
-          <button class="create-btn" (click)="showModal.set(true)">
-            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                 stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-            Nouveau TreeMap
-          </button>
+          <div class="header-actions">
+            <button class="action-btn action-btn--secondary" (click)="triggerImport()">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="17 8 12 3 7 8"/>
+                <line x1="12" y1="3" x2="12" y2="15"/>
+              </svg>
+              Importer JSON
+            </button>
+            @if (list.total() > 0) {
+              <button class="action-btn action-btn--secondary" (click)="exportAll()">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="7 10 12 15 17 10"/>
+                  <line x1="12" y1="15" x2="12" y2="3"/>
+                </svg>
+                Exporter Tout
+              </button>
+            }
+            <button class="create-btn" (click)="showModal.set(true)">
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                   stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+              Nouveau TreeMap
+            </button>
+          </div>
         </div>
 
         <!-- Statistiques -->
@@ -239,6 +259,19 @@ import { TreemapCardComponent } from './treemap-card/treemap-card.component';
     .page-title { font-size: 1.625rem; font-weight: 700; color: #111827; }
     .page-sub   { font-size: .875rem; color: #9CA3AF; margin-top: .25rem; }
 
+    .header-actions { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+    .action-btn {
+      display: inline-flex; align-items: center; gap: .5rem;
+      padding: .625rem 1.25rem;
+      border-radius: .75rem;
+      font-size: .9375rem; font-weight: 600; font-family: inherit; cursor: pointer;
+      white-space: nowrap; transition: all 150ms;
+      &.action-btn--secondary {
+        background: #fff; color: #4B5563; border: 1.5px solid #E5E7EB;
+        &:hover { background: #F9FAFB; border-color: #D1D5DB; color: #111827; }
+      }
+    }
+
     .create-btn {
       display: inline-flex; align-items: center; gap: .5rem;
       padding: .625rem 1.25rem;
@@ -415,6 +448,100 @@ export class DashboardComponent {
     const doc = this.list.create(title);
     this.closeModal();
     this.router.navigate(['/editor', doc.id]);
+  }
+
+  triggerImport() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.multiple = true;
+    input.accept = '.json';
+    input.onchange = (e: any) => {
+      const files: FileList = e.target.files;
+      if (!files || files.length === 0) return;
+      this.importFiles(files);
+    };
+    input.click();
+  }
+
+  importFiles(files: FileList) {
+    let importedCount = 0;
+    let errorCount = 0;
+
+    const promises = Array.from(files).map(file => {
+      return new Promise<void>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = (event: any) => {
+          try {
+            const content = event.target.result;
+            const parsed = JSON.parse(content);
+            
+            if (Array.isArray(parsed)) {
+              for (const item of parsed) {
+                if (this.isValidTreeMapDoc(item)) {
+                  this.list.importTreeMap(item);
+                  importedCount++;
+                } else {
+                  errorCount++;
+                }
+              }
+            } else if (this.isValidTreeMapDoc(parsed)) {
+              this.list.importTreeMap(parsed);
+              importedCount++;
+            } else if (parsed.root && parsed.name) {
+              const now = new Date().toISOString();
+              const treemap = {
+                id: crypto.randomUUID(),
+                title: parsed.name,
+                status: 'en-cours' as const,
+                createdAt: now,
+                updatedAt: now,
+                data: parsed
+              };
+              this.list.importTreeMap(treemap);
+              importedCount++;
+            } else {
+              errorCount++;
+            }
+          } catch (e) {
+            errorCount++;
+          }
+          resolve();
+        };
+        reader.onerror = () => {
+          errorCount++;
+          resolve();
+        };
+        reader.readAsText(file);
+      });
+    });
+
+    Promise.all(promises).then(() => {
+      if (importedCount > 0) {
+        alert(`Succès : ${importedCount} TreeMap(s) importé(s) avec succès !`);
+      }
+      if (errorCount > 0) {
+        alert(`Erreur : ${errorCount} fichier(s) ou élément(s) n'ont pas pu être importés (format invalide).`);
+      }
+    });
+  }
+
+  exportAll() {
+    const list = this.list.treemaps();
+    if (list.length === 0) return;
+    
+    const blob = new Blob([JSON.stringify(list, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    
+    const dateStr = new Date().toISOString().split('T')[0];
+    link.download = `treemaps_export_${dateStr}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  private isValidTreeMapDoc(obj: any): boolean {
+    return obj && typeof obj === 'object' && typeof obj.title === 'string' && obj.data && typeof obj.data.root === 'object';
   }
 
   closeModal() { this.showModal.set(false); this.newTitle = ''; }
