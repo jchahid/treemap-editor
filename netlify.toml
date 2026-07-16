@@ -2,6 +2,9 @@
   command   = "node scripts/set-env.js && npm run build:web"
   publish   = "dist/treemap-editor/browser"
 
+[build.environment]
+  SECRETS_SCAN_OMIT_KEYS = "FIREBASE_API_KEY,GOOGLE_CLIENT_ID"
+
 [[redirects]]
   from   = "/*"
   to     = "/index.html"
