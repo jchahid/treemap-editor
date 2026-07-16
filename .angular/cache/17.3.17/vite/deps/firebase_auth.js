@@ -28,7 +28,7 @@ import {
   querystring,
   querystringDecode,
   registerVersion
-} from "./chunk-W6UOBDL6.js";
+} from "./chunk-MNA7GMUQ.js";
 import {
   __async,
   __objRest,

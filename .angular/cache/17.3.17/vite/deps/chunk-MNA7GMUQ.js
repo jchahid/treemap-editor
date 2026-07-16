@@ -300,6 +300,22 @@ var getDefaults = () => {
   }
 };
 var getDefaultEmulatorHost = (productName) => getDefaults()?.emulatorHosts?.[productName];
+var getDefaultEmulatorHostnameAndPort = (productName) => {
+  const host = getDefaultEmulatorHost(productName);
+  if (!host) {
+    return void 0;
+  }
+  const separatorIndex = host.lastIndexOf(":");
+  if (separatorIndex <= 0 || separatorIndex + 1 === host.length) {
+    throw new Error(`Invalid host ${host} with no separate hostname and port!`);
+  }
+  const port = parseInt(host.substring(separatorIndex + 1), 10);
+  if (host[0] === "[") {
+    return [host.substring(1, separatorIndex - 1), port];
+  } else {
+    return [host.substring(0, separatorIndex), port];
+  }
+};
 var getDefaultAppConfig = () => getDefaults()?.config;
 var getExperimentalSetting = (name2) => getDefaults()?.[`_${name2}`];
 var Deferred = class {
@@ -337,6 +353,41 @@ var Deferred = class {
     };
   }
 };
+function createMockUserToken(token, projectId) {
+  if (token.uid) {
+    throw new Error('The "uid" field is no longer supported by mockUserToken. Please use "sub" instead for Firebase Auth User ID.');
+  }
+  const header = {
+    alg: "none",
+    type: "JWT"
+  };
+  const project = projectId || "demo-project";
+  const iat = token.iat || 0;
+  const sub = token.sub || token.user_id;
+  if (!sub) {
+    throw new Error("mockUserToken must contain 'sub' or 'user_id' field!");
+  }
+  const payload = __spreadValues({
+    // Set all required fields to decent defaults
+    iss: `https://securetoken.google.com/${project}`,
+    aud: project,
+    iat,
+    exp: iat + 3600,
+    auth_time: iat,
+    sub,
+    user_id: sub,
+    firebase: {
+      sign_in_provider: "custom",
+      identities: {}
+    }
+  }, token);
+  const signature = "";
+  return [
+    base64urlEncodeWithoutPadding(JSON.stringify(header)),
+    base64urlEncodeWithoutPadding(JSON.stringify(payload)),
+    signature
+  ].join(".");
+}
 function getUA() {
   if (typeof navigator !== "undefined" && typeof navigator["userAgent"] === "string") {
     return navigator["userAgent"];
@@ -348,6 +399,19 @@ function isMobileCordova() {
   return typeof window !== "undefined" && // @ts-ignore Setting up an broadly applicable index signature for Window
   // just to deal with this case would probably be a bad idea.
   !!(window["cordova"] || window["phonegap"] || window["PhoneGap"]) && /ios|iphone|ipod|ipad|android|blackberry|iemobile/i.test(getUA());
+}
+function isNode() {
+  const forceEnvironment = getDefaults()?.forceEnvironment;
+  if (forceEnvironment === "node") {
+    return true;
+  } else if (forceEnvironment === "browser") {
+    return false;
+  }
+  try {
+    return Object.prototype.toString.call(global.process) === "[object process]";
+  } catch (e) {
+    return false;
+  }
 }
 function isBrowser() {
   return typeof window !== "undefined" || isWebWorker();
@@ -368,6 +432,12 @@ function isReactNative() {
 function isIE() {
   const ua = getUA();
   return ua.indexOf("MSIE ") >= 0 || ua.indexOf("Trident/") >= 0;
+}
+function isSafari() {
+  return !isNode() && !!navigator.userAgent && navigator.userAgent.includes("Safari") && !navigator.userAgent.includes("Chrome");
+}
+function isSafariOrWebkit() {
+  return !isNode() && !!navigator.userAgent && (navigator.userAgent.includes("Safari") || navigator.userAgent.includes("WebKit")) && !navigator.userAgent.includes("Chrome");
 }
 function isIndexedDBAvailable() {
   try {
@@ -2142,14 +2212,20 @@ registerCoreComponents("");
 
 export {
   base64Decode,
+  getGlobal,
   getDefaultEmulatorHost,
+  getDefaultEmulatorHostnameAndPort,
   getExperimentalSetting,
+  createMockUserToken,
   getUA,
   isMobileCordova,
   isCloudflareWorker,
   isBrowserExtension,
   isReactNative,
   isIE,
+  isSafari,
+  isSafariOrWebkit,
+  isIndexedDBAvailable,
   FirebaseError,
   ErrorFactory,
   isEmpty,
@@ -2260,8 +2336,6 @@ export {
    * See the License for the specific language governing permissions and
    * limitations under the License.
    *)
-
-@firebase/util/dist/index.esm.js:
   (**
    * @license
    * Copyright 2017 Google LLC
@@ -2281,24 +2355,6 @@ export {
   (**
    * @license
    * Copyright 2021 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-
-@firebase/util/dist/index.esm.js:
-  (**
-   * @license
-   * Copyright 2017 Google LLC
    *
    * Licensed under the Apache License, Version 2.0 (the "License");
    * you may not use this file except in compliance with the License.
@@ -2595,4 +2651,4 @@ export {
    * limitations under the License.
    *)
 */
-//# sourceMappingURL=chunk-W6UOBDL6.js.map
+//# sourceMappingURL=chunk-MNA7GMUQ.js.map

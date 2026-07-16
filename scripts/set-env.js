@@ -37,6 +37,7 @@ export const environment = {
 `;
 
 const dir = path.join(__dirname, '..', 'src', 'environments');
+fs.mkdirSync(dir, { recursive: true });
 fs.writeFileSync(path.join(dir, 'environment.ts'),      make(false));
 fs.writeFileSync(path.join(dir, 'environment.prod.ts'), make(true));
 console.log('✅  environment.ts and environment.prod.ts generated.');
