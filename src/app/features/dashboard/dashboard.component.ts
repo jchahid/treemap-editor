@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { AuthService } from '../../core/services/auth.service';
 import { TreeMapListService } from '../../core/services/treemap-list.service';
 import { TreemapCardComponent } from './treemap-card/treemap-card.component';
+import { DailyTodoService, TodoTask } from '../../core/services/daily-todo.service';
 
 function sanitizeHtml(html: string): string {
   if (!html) return '';
@@ -69,6 +70,14 @@ function sanitizeTreeNode(node: any): void {
             <div class="user-avatar">{{ userInitial() }}</div>
             <span class="user-name">{{ auth.user()?.displayName }}</span>
           </div>
+          <button class="todo-nav-btn" (click)="openTodoModal()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                 stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="9 11 12 14 22 4"/>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+            </svg>
+            Todo List
+          </button>
           <button class="logout-btn" (click)="logout()">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor"
                  stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -245,9 +254,240 @@ function sanitizeTreeNode(node: any): void {
         </div>
       </div>
     }
+
+    <!-- ─── Modal Todo List ──────────────────────────────────────── -->
+    @if (showTodoModal()) {
+      <div class="modal-backdrop" (click)="closeTodoModal()">
+        <div class="todo-modal" (click)="$event.stopPropagation()">
+          <div class="modal-head">
+            <div class="todo-modal-title">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#6366F1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="9 11 12 14 22 4"/>
+                <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+              </svg>
+              <h2>Ma Todo List</h2>
+            </div>
+            <button class="modal-close" (click)="closeTodoModal()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+              </svg>
+            </button>
+          </div>
+
+          <div class="todo-tabs">
+            <button [class.active]="todoTab() === 'daily'" (click)="todoTab.set('daily')">Suivi Journalier</button>
+            <button [class.active]="todoTab() === 'defaults'" (click)="todoTab.set('defaults')">Modèle par Défaut</button>
+          </div>
+
+          <div class="todo-modal-body">
+            @if (todoTab() === 'daily') {
+              <!-- Navigation des dates -->
+              <div class="date-navigator">
+                <button class="nav-arrow-btn" (click)="navigateDate(-1)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+                <div class="date-label">
+                  <span class="date-friendly">{{ friendlyDate() }}</span>
+                  @if (!isToday()) {
+                    <button class="today-btn" (click)="goToToday()">Aujourd'hui</button>
+                  }
+                </div>
+                <button class="nav-arrow-btn" (click)="navigateDate(1)">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Liste des tâches pour la date sélectionnée -->
+              <div class="todo-list-items">
+                @for (task of dailyTasks(); track task.id; let i = $index) {
+                  <div class="todo-item-row" [class.completed]="task.completed">
+                    <label class="todo-checkbox-wrapper">
+                      <input type="checkbox" [checked]="task.completed" (change)="toggleDailyTask(i)" />
+                      <span class="todo-text">{{ task.label }}</span>
+                    </label>
+                    <button class="delete-task-btn" (click)="deleteDailyTask(i)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
+                  </div>
+                } @empty {
+                  <div class="todo-empty">
+                    <p>Aucune tâche pour ce jour.</p>
+                  </div>
+                }
+              </div>
+
+              <!-- Formulaire d'ajout de tâche temporaire/journalière -->
+              <form class="todo-add-form" (ngSubmit)="addDailyTask()">
+                <input type="text" [(ngModel)]="newTodoText" name="newTodoText" placeholder="Ajouter une tâche pour ce jour…" required />
+                <button type="submit" [disabled]="!newTodoText.trim()">Ajouter</button>
+              </form>
+
+            } @else {
+              <!-- Gestion des tâches par défaut -->
+              <div class="defaults-explanation">
+                <p>Définissez ici la liste des tâches qui apparaîtront par défaut sur chaque nouvelle journée.</p>
+              </div>
+
+              <div class="todo-list-items">
+                @for (task of defaultTasks(); track task.id; let i = $index) {
+                  <div class="todo-item-row">
+                    <span class="todo-text">{{ task.label }}</span>
+                    <button class="delete-task-btn" (click)="deleteDefaultTask(task.id)">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                      </svg>
+                    </button>
+                  </div>
+                } @empty {
+                  <div class="todo-empty">
+                    <p>Aucune tâche par défaut.</p>
+                  </div>
+                }
+              </div>
+
+              <!-- Formulaire d'ajout de tâche par défaut -->
+              <form class="todo-add-form" (ngSubmit)="addDefaultTask()">
+                <input type="text" [(ngModel)]="newDefaultText" name="newDefaultText" placeholder="Ajouter au modèle par défaut…" required />
+                <button type="submit" [disabled]="!newDefaultText.trim()">Ajouter</button>
+              </form>
+            }
+          </div>
+        </div>
+      </div>
+    }
   `,
   styles: [`
     :host { display: block; height: 100vh; overflow-y: auto; background: #F8F7F4; }
+
+    /* ── Todo List Modal ── */
+    .todo-nav-btn {
+      display: flex; align-items: center; gap: .375rem;
+      padding: .4375rem .875rem;
+      border: 1.5px solid #E5E7EB; border-radius: .625rem;
+      background: #fff; color: #4F46E5;
+      font-size: .8125rem; font-weight: 600; font-family: inherit; cursor: pointer;
+      transition: all 150ms;
+      &:hover { border-color: #6366F1; background: #EEF2FF; }
+    }
+
+    .todo-modal {
+      background: #fff; border-radius: 1.25rem; width: 100%; max-width: 500px;
+      box-shadow: 0 24px 64px rgba(0,0,0,.2); animation: slideUp .25s ease-out;
+      display: flex; flex-direction: column; overflow: hidden;
+      max-height: 90vh;
+    }
+
+    .todo-modal-title {
+      display: flex; align-items: center; gap: .5rem;
+      h2 { font-size: 1.125rem; font-weight: 700; color: #111827; }
+    }
+
+    .todo-tabs {
+      display: flex; border-bottom: 1px solid #E5E7EB; background: #F9FAFB;
+      button {
+        flex: 1; padding: .875rem; border: none; background: transparent;
+        font-size: .875rem; font-weight: 600; color: #6B7280; cursor: pointer;
+        transition: all 150ms;
+        border-bottom: 2px solid transparent;
+        &:hover { color: #4F46E5; }
+        &.active { color: #4F46E5; border-bottom-color: #4F46E5; background: #fff; }
+      }
+    }
+
+    .todo-modal-body {
+      padding: 1.5rem; display: flex; flex-direction: column; gap: 1.25rem;
+      overflow-y: auto; flex: 1;
+    }
+
+    .date-navigator {
+      display: flex; align-items: center; justify-content: space-between;
+      background: #F3F4F6; padding: .5rem .75rem; border-radius: .75rem;
+      margin-bottom: .5rem;
+    }
+    .nav-arrow-btn {
+      width: 28px; height: 28px; border-radius: .5rem; border: none;
+      background: #fff; color: #4B5563; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,.05);
+      transition: all 150ms;
+      &:hover { background: #EEF2FF; color: #4F46E5; }
+    }
+    .date-label {
+      display: flex; align-items: center; gap: .5rem;
+    }
+    .date-friendly {
+      font-size: .875rem; font-weight: 700; color: #111827;
+    }
+    .today-btn {
+      padding: .25rem .5rem; font-size: .75rem; font-weight: 600;
+      background: #4F46E5; color: #fff; border: none; border-radius: .375rem;
+      cursor: pointer; transition: all 150ms;
+      &:hover { background: #4338CA; }
+    }
+
+    .todo-list-items {
+      display: flex; flex-direction: column; gap: .75rem;
+      max-height: 300px; overflow-y: auto; padding-right: .25rem;
+    }
+
+    .todo-item-row {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .75rem 1rem; background: #F9FAFB; border: 1.5px solid #F3F4F6;
+      border-radius: .75rem; transition: all 150ms;
+      &:hover { border-color: #E5E7EB; background: #fff; }
+      &.completed {
+        background: #F9FAFB; opacity: .7;
+        .todo-text { text-decoration: line-through; color: #9CA3AF; }
+      }
+    }
+
+    .todo-checkbox-wrapper {
+      display: flex; align-items: center; gap: .75rem; cursor: pointer; flex: 1;
+      input[type="checkbox"] {
+        width: 18px; height: 18px; border-radius: .375rem; border: 1.5px solid #D1D5DB;
+        accent-color: #4F46E5; cursor: pointer;
+      }
+    }
+    .todo-text {
+      font-size: .875rem; font-weight: 500; color: #374151;
+      user-select: none;
+    }
+    .delete-task-btn {
+      width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;
+      border: none; background: transparent; color: #9CA3AF; border-radius: .375rem;
+      cursor: pointer; transition: all 150ms;
+      &:hover { background: #FEF2F2; color: #DC2626; }
+    }
+    .todo-empty {
+      text-align: center; padding: 2rem; color: #9CA3AF; font-size: .875rem; font-style: italic;
+    }
+
+    .todo-add-form {
+      display: flex; gap: .5rem; margin-top: .5rem;
+      input {
+        flex: 1; padding: .625rem .875rem;
+        border: 1.5px solid #E5E7EB; border-radius: .625rem;
+        font-size: .875rem; background: #fff; color: #111827; font-family: inherit;
+        &:focus { outline: none; border-color: #6366F1; box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
+      }
+      button {
+        padding: .625rem 1rem; border: none; border-radius: .625rem;
+        background: #4F46E5; color: #fff; font-size: .875rem; font-weight: 600;
+        cursor: pointer; transition: all 150ms;
+        &:hover:not(:disabled) { background: #4338CA; }
+        &:disabled { opacity: .5; cursor: not-allowed; }
+      }
+    }
+
+    .defaults-explanation {
+      font-size: .8125rem; color: #6B7280; line-height: 1.4;
+      background: #EFF6FF; border: 1px solid #BFDBFE; padding: .75rem; border-radius: .625rem;
+    }
 
     /* ── Navbar ── */
     .navbar {
@@ -459,11 +699,18 @@ function sanitizeTreeNode(node: any): void {
 export class DashboardComponent {
   auth = inject(AuthService);
   list = inject(TreeMapListService);
+  todoService = inject(DailyTodoService);
   router = inject(Router);
 
   showModal  = signal(false);
+  showTodoModal = signal(false);
+  todoTab = signal<'daily' | 'defaults'>('daily');
+  currentDate = signal<Date>(new Date());
+
   searchQuery = signal('');
   newTitle = '';
+  newTodoText = '';
+  newDefaultText = '';
 
   userInitial = computed(() => (this.auth.user()?.displayName ?? '?').charAt(0).toUpperCase());
 
@@ -584,6 +831,91 @@ export class DashboardComponent {
 
   private isValidTreeMapDoc(obj: any): boolean {
     return obj && typeof obj === 'object' && typeof obj.title === 'string' && obj.data && typeof obj.data.root === 'object';
+  }
+
+  dailyTasks = computed(() => {
+    const dateStr = this.formatDateKey(this.currentDate());
+    return this.todoService.getTasksForDate(dateStr);
+  });
+
+  defaultTasks = computed(() => this.todoService.data().defaultTasks);
+
+  friendlyDate = computed(() => {
+    return this.formatFriendlyDate(this.currentDate());
+  });
+
+  isToday = computed(() => {
+    const today = new Date();
+    const current = this.currentDate();
+    return today.toDateString() === current.toDateString();
+  });
+
+  formatDateKey(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  formatFriendlyDate(date: Date): string {
+    const options: Intl.DateTimeFormatOptions = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
+    return date.toLocaleDateString('fr-FR', options);
+  }
+
+  navigateDate(offset: number) {
+    const current = this.currentDate();
+    const next = new Date(current);
+    next.setDate(current.getDate() + offset);
+    this.currentDate.set(next);
+  }
+
+  goToToday() {
+    this.currentDate.set(new Date());
+  }
+
+  toggleDailyTask(index: number) {
+    const tasks = [...this.dailyTasks()];
+    tasks[index] = { ...tasks[index], completed: !tasks[index].completed };
+    const dateStr = this.formatDateKey(this.currentDate());
+    this.todoService.saveTasksForDate(dateStr, tasks);
+  }
+
+  addDailyTask() {
+    const text = this.newTodoText.trim();
+    if (!text) return;
+    const tasks = [...this.dailyTasks(), { id: crypto.randomUUID(), label: text, completed: false }];
+    const dateStr = this.formatDateKey(this.currentDate());
+    this.todoService.saveTasksForDate(dateStr, tasks);
+    this.newTodoText = '';
+  }
+
+  deleteDailyTask(index: number) {
+    const tasks = this.dailyTasks().filter((_, i) => i !== index);
+    const dateStr = this.formatDateKey(this.currentDate());
+    this.todoService.saveTasksForDate(dateStr, tasks);
+  }
+
+  addDefaultTask() {
+    const text = this.newDefaultText.trim();
+    if (!text) return;
+    this.todoService.addDefaultTask(text);
+    this.newDefaultText = '';
+  }
+
+  deleteDefaultTask(id: string) {
+    this.todoService.removeDefaultTask(id);
+  }
+
+  openTodoModal() {
+    this.showTodoModal.set(true);
+    this.todoTab.set('daily');
+    this.currentDate.set(new Date());
+  }
+
+  closeTodoModal() {
+    this.showTodoModal.set(false);
+    this.newTodoText = '';
+    this.newDefaultText = '';
   }
 
   closeModal() { this.showModal.set(false); this.newTitle = ''; }
