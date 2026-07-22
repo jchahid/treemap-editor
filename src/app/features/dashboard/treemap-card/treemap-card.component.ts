@@ -34,7 +34,19 @@ import { TreeMapDocument } from '../../../core/models/treemap.model';
       </div>
 
       <!-- Titre -->
-      <h3 class="card-title">{{ treemap().title }}</h3>
+      <h3 class="card-title">
+        @if (isEditing()) {
+          <input type="text" [value]="tempTitle()" (input)="tempTitle.set($any($event.target).value)" (blur)="saveTitle()" (keydown.enter)="saveTitle()" (keydown.escape)="cancelEdit()" class="title-edit-input" />
+        } @else {
+          <span class="title-text" (click)="startEdit($event)">{{ treemap().title }}</span>
+          <button class="edit-title-btn" (click)="startEdit($event)" title="Renommer">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+              <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+            </svg>
+          </button>
+        }
+      </h3>
 
       <!-- Date de création -->
       <p class="card-date">
@@ -119,7 +131,26 @@ import { TreeMapDocument } from '../../../core/models/treemap.model';
     /* Contenu */
     .card-title {
       font-size: 1rem; font-weight: 600; color: #111827; line-height: 1.4;
-      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      display: flex; align-items: center; gap: .375rem; justify-content: space-between;
+      overflow: hidden;
+    }
+    .title-text {
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; flex: 1;
+      &:hover { color: #4F46E5; text-decoration: underline; }
+    }
+    .edit-title-btn {
+      opacity: 0; transition: opacity 150ms;
+      display: flex; align-items: center; justify-content: center;
+      border: none; background: transparent; color: #9CA3AF; cursor: pointer;
+      width: 20px; height: 20px; border-radius: 4px;
+      &:hover { color: #4F46E5; background: #EEF2FF; }
+    }
+    .card:hover .edit-title-btn { opacity: 1; }
+
+    .title-edit-input {
+      width: 100%; padding: .25rem .5rem; border: 1.5px solid #6366F1; border-radius: .375rem;
+      font-size: .875rem; font-weight: 500; font-family: inherit; color: #111827;
+      &:focus { outline: none; box-shadow: 0 0 0 3px rgba(99,102,241,.1); }
     }
     .card-date {
       display: flex; align-items: center; gap: .375rem;
@@ -165,19 +196,45 @@ export class TreemapCardComponent {
   treemap = input.required<TreeMapDocument>();
   edit   = output<string>();
   delete = output<string>();
-
+  rename = output<{ id: string, title: string }>();
+ 
   showConfirm = signal(false);
-
+  isEditing   = signal(false);
+  tempTitle   = signal('');
+ 
   statusLabel = computed(() => ({
     'en-cours': 'En cours',
     'terminé':  'Terminé',
     'brouillon': 'Brouillon',
   }[this.treemap().status] ?? this.treemap().status));
-
+ 
   badgeClass = computed(() => `badge badge--${this.treemap().status}`);
-
+ 
   doDelete() {
     this.delete.emit(this.treemap().id);
     this.showConfirm.set(false);
+  }
+
+  startEdit(event: MouseEvent) {
+    event.stopPropagation();
+    this.tempTitle.set(this.treemap().title);
+    this.isEditing.set(true);
+    setTimeout(() => {
+      const el = document.querySelector('.title-edit-input') as HTMLInputElement;
+      el?.focus();
+      el?.select();
+    });
+  }
+
+  saveTitle() {
+    const title = this.tempTitle().trim();
+    if (title && title !== this.treemap().title) {
+      this.rename.emit({ id: this.treemap().id, title });
+    }
+    this.isEditing.set(false);
+  }
+
+  cancelEdit() {
+    this.isEditing.set(false);
   }
 }

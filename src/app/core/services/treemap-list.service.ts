@@ -109,7 +109,18 @@ export class TreeMapListService {
     this._treemaps.update(list => {
       const next = list.map(t => {
         if (t.id !== id) return t;
-        updated = { ...t, ...updates, updatedAt: new Date().toISOString() };
+        let nextData = t.data;
+        if (updates.title) {
+          nextData = {
+            ...t.data,
+            name: updates.title,
+            root: {
+              ...t.data.root,
+              title: updates.title
+            }
+          };
+        }
+        updated = { ...t, ...updates, data: nextData, updatedAt: new Date().toISOString() };
         return updated;
       });
       return next;

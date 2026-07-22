@@ -216,7 +216,8 @@ function sanitizeTreeNode(node: any): void {
             @for (tm of filtered(); track tm.id) {
               <app-treemap-card [treemap]="tm"
                                 (edit)="onEdit($event)"
-                                (delete)="onDelete($event)" />
+                                (delete)="onDelete($event)"
+                                (rename)="onRename($event)" />
             }
           </div>
         }
@@ -727,6 +728,7 @@ export class DashboardComponent {
 
   onEdit(id: string)   { this.router.navigate(['/editor', id]); }
   onDelete(id: string) { this.list.remove(id); }
+  onRename(event: { id: string, title: string }) { this.list.update(event.id, { title: event.title }); }
 
   onCreate() {
     const title = this.newTitle.trim();
