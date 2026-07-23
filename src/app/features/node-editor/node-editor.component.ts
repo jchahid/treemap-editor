@@ -249,11 +249,28 @@ function sanitizeHtml(html: string): string {
 
     /* Code Editor Styles */
     .code-editor { display: flex; flex-direction: column; gap: 1rem; flex: 1; }
-    .code-textarea { flex: 1; min-height: 300px; font-family: monospace; padding: 1rem; background: #1e1e1e; color: #d4d4d4; border-radius: 8px; border: none; font-size: 1rem; line-height: 1.5; resize: none; }
+    .code-textarea {
+      flex: 1; min-height: 300px; font-family: monospace; padding: 1rem;
+      background: #1e1e1e; color: #d4d4d4; border-radius: 8px; border: none;
+      font-size: 1rem; line-height: 1.5; resize: none;
+      /* Style de la barre de défilement */
+      &::-webkit-scrollbar { width: 6px; }
+      &::-webkit-scrollbar-track { background: transparent; }
+      &::-webkit-scrollbar-thumb { background: #555; border-radius: 10px; }
+      &::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+    }
 
     .rich-editor-container { flex: 1; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
     .rich-editor-toolbar { padding: 0.5rem; background: var(--bg-primary); border-bottom: 1px solid var(--border); display: flex; gap: 4px; button { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 6px; &:hover { background: var(--border); color: var(--accent); } } .divider { width: 1px; height: 24px; background: var(--border); margin: 0 4px; } }
-    .modal-rich-editor { flex: 1; padding: 1.5rem; min-height: 300px; outline: none; font-family: var(--font-content); font-size: 1.1rem; line-height: 1.6; }
+    .modal-rich-editor {
+      flex: 1; padding: 1.5rem; min-height: 300px; max-height: 400px; overflow-y: auto; outline: none;
+      font-family: var(--font-content); font-size: 1.1rem; line-height: 1.6;
+      /* Style de la barre de défilement */
+      &::-webkit-scrollbar { width: 6px; }
+      &::-webkit-scrollbar-track { background: transparent; }
+      &::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+      &::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+    }
     .upload-dropzone { border: 2px dashed var(--border); border-radius: 12px; padding: 3rem; display: flex; flex-direction: column; align-items: center; gap: 1rem; cursor: pointer; color: var(--text-secondary); &:hover { border-color: var(--accent); color: var(--accent); background: var(--bg-primary); } }
     .modal-image-preview { margin-top: 1rem; text-align: center; img { max-width: 100%; max-height: 300px; border-radius: 12px; } }
     .modal-footer { padding: 1.5rem; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; }

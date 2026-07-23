@@ -161,7 +161,14 @@ import { TreeService } from '../../../core/services/tree.service';
 
     .node-body {
       font-size: 0.85rem; color: var(--text-secondary); max-height: 120px; overflow-y: auto; width: 100%;
-      .node-text { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+      
+      /* Sleek scrollbar styling */
+      &::-webkit-scrollbar { width: 4px; }
+      &::-webkit-scrollbar-track { background: transparent; }
+      &::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+      &::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+      .node-text { text-align: left; word-break: break-word; }
       .node-image img { width: 100%; height: 60px; object-fit: cover; border-radius: 4px; }
       .node-placeholder { font-style: italic; opacity: 0.5; }
     }

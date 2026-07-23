@@ -14,6 +14,11 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'todo',
+    loadComponent: () => import('./features/todo/todo.component').then(m => m.TodoComponent),
+    canActivate: [authGuard],
+  },
+  {
     path: 'editor/:id',
     loadComponent: () => import('./features/editor-shell/editor-shell.component').then(m => m.EditorShellComponent),
     canActivate: [authGuard],
